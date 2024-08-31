@@ -13,7 +13,7 @@ Code for the paper "Harnessing Causality in Reinforcement Learning to Address Mi
   - `/5estimate_R_prior.py`: Constructs the rewards using linear dynamical systems for HeartSteps V3.
   - `/6build_dag_prior.py`: Constructs the prior for BSLSVI.
   - `/6build_dag_prior_TS.py`: Constructs the prior for TSM.
-  - `/lds.py`: Modifies the script in the [SSM](https://github.com/lindermanlab/ssm/blob/master/ssm/lds.py) package to remove the direct influence from the input vector to the emission variable and fixes the bug in initializing $Var(v_d^{\prime})$ when the latent variable and the emission variable have the same dimension.
+  - `/lds.py`: Modifies the script in the [SSM](https://github.com/lindermanlab/ssm/blob/master/ssm/lds.py) package to remove the direct influence from the input vector to the emission variable and fix the bug in initializing $Var(v_d^{\prime})$ when the latent variable and the emission variable have the same dimension.
   - `/regression.py`: Implements linear regression with $L_2$ and Laplacian penalties, as well as Bayesian linear regression.
 
 - `/base`: Contains scripts used to check the testbed, estimate the standardized treatment effect (STE), and run experiments.
