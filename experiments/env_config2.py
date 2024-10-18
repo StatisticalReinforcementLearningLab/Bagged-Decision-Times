@@ -20,11 +20,11 @@ class EnvConfig(EnvConfigBase):
             params_env = json.load(file)
         for key, value in params_env.items():
             params_env[key] = np.array(value)
-        params_env['theta_R'][1:6] += 0
+        params_env['theta_R'][1:6] += 0.04
         params_env['theta_R'][1:6] = np.maximum(params_env['theta_R'][1:6], 0)
         params_env['theta_M'][1:3] = np.maximum(params_env['theta_M'][1:3], 0)
-        params_env['theta_R'][6] += 0.1
-        params_env['theta_E'][2:7] -= 0.02
+        params_env['theta_R'][6] += 0
+        params_env['theta_E'][2:7] += 0
 
         self.E0 = params_env["E0"]
         self.R0 = params_env["R0"]

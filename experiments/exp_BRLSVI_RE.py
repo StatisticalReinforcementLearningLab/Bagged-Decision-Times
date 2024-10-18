@@ -5,28 +5,43 @@ import numpy as np
 import numpy.random as rd
 import pandas as pd
 from env_config import EnvConfig
-from env_testbed import Env
+from env_testbed_RE import Env
 from dataset import Dataset
-from mrt import MRT
-from TS import TS
+from mrt_RE import MRT
+from artificial_data import ArtificialData
+from BRLSVI import BRLSVI
 import time
 from joblib import Parallel, delayed
 import json
 from pathlib import Path
+import sys
+jobid = int(sys.argv[1])
 
 
 # %% parameters
 
 
-## algorithm parameters
-P0 = 0.3 # initial P(A = 1)
+sigma2list = [0.001, 0.002, 0.005, 0.01]
+reglist = [2, 5, 10, 20, 50]
+array_idx = np.unravel_index(jobid, (len(sigma2list), len(reglist)))
+J = 0 # number of artifial episodes
+sigma2 = sigma2list[array_idx[0]]
+reg = reglist[array_idx[1]]
+lam_beta = reg / sigma2 ## lamlist[array_idx[1]] # tuning parameter for beta
+lam_theta = 0.1 # tuning parameter for theta
+J_init = 100000 # number of artificial episodes for initialization
 
-ver = '1'
-path = 'res_TSM' + ver + '/'
-file_prefix = 'version' + ver + '_J' + str(0) + '_lam' + str(0.1)
+## algorithm parameters
+L = 1 # number of days in a trajectory
+B = 1 # number of bootstrap samples
+P0 = 0.5 # initial P(A = 1)
+
+ver = '_RE'
+path = 'res_BRLSVI' + ver + '/'
+file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
-params_env_path = 'params_env_V2/'
-params_prior_file = 'params_prior_V3_TS.json'
+params_env_path = 'params_env_RE_V2/'
+params_prior_file = 'params_prior_V3.json'
 params_std_file = 'params_std_V2.json'
 
 userid_all = np.loadtxt(params_env_path + 'user_ids.txt', dtype=int)
@@ -38,12 +53,18 @@ seed = 2023
 # %% helper
 
 
-def create_ts(env_config):
+def create_art(config, L):
     with open(params_prior_file, 'r') as file:
-        params_prior = json.load(file)
-    for key, value in params_prior.items():
-        params_prior[key] = np.array(value)
-    return TS(params_prior, env_config, standardize=False)
+        art_params = json.load(file)
+    for key, value in art_params.items():
+        art_params[key] = np.array(value)
+    art_params['prob'] = 0.5 # action assignment probability
+    ## shift the prior simultaneously with the testbed variants, assuming that 
+    ## the previous trial has approximately the same STE as the new trial
+    art_params['theta_R_mean'][1:6] += 0
+    art_params['theta_R_mean'][6] += 0
+    art_params['theta_E_mean'][2:7] -= 0
+    return ArtificialData(art_params, config, L)
 
 
 # %% experiments
@@ -68,6 +89,7 @@ def experiment(itr):
             userid, params_env_path, params_std_file,
         )
         env = Env(config)
+        art = create_art(config, L)
 
         dat = Dataset(config.userid, config.K, config.D)
         elapse = []
@@ -80,7 +102,7 @@ def experiment(itr):
         dat.df.loc[0, 'R_imp'] = R0
 
         ## warm up
-        for d in range(0, config.D_warm):
+        for d in range(0, config.D_warm):  # d = # of days in the history data
             start = time.time()
             Edm1 = np.array([dat.df.loc[d, 'E']])
             Rdm1 = np.array([dat.df.loc[d, 'R']])
@@ -94,10 +116,10 @@ def experiment(itr):
                 Pd[k] = P0
                 Ad[k] = rd.choice([0, 1], size=1, p=[1 - Pd[k, 0], Pd[k, 0]])
                 Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], d, k)
-            Ed = env.gen_Ed(Ad, Edm1, d)
+            Ed = env.gen_Ed(Ad, Edm1, Rdm1, d)
             Rd = env.gen_Rd(Md, Ed, Rdm1, d)
             Od = env.gen_Od(Rdm1, d)
-            if (d + 1) % config.W == 0:
+            if True:
                 Rd_obs = Rd.copy()
             else:
                 Rd_obs = np.array([np.nan])
@@ -116,13 +138,21 @@ def experiment(itr):
             elapse.append(time.time() - start)
             
 
-        ts = create_ts(config)
-        ## Thompson sampling
+        ## initialize BRLSVI
+        brlsvi = BRLSVI(config, lam_beta, sigma2, standardize=False)
+        # opt_beta = brlsvi.get_opt_Q(env, art)
+        betas = np.zeros((brlsvi.dX, B))
+
+        ## bootstrapped stationary LSVI
         for d in range(config.D_warm, config.D):
             start = time.time()
-            ts.update(dat, d, k=0)
+            b = 0
+            comb_dat = art.combine_dataset(dat, d, J)
+            ## BRLSVI
+            beta = brlsvi.get_Q(betas[:, [b]], comb_dat, d + J)
+            betas[:, [b]] = beta.copy()
             
-            ## new state at stage k
+            Rdm1_imp = dat.df.loc[d, 'R_obs']
             Edm1 = np.array([dat.df.loc[d, 'E']])
             Rdm1 = np.array([dat.df.loc[d, 'R']])
             Cd = np.zeros((config.K, config.dC))
@@ -132,16 +162,15 @@ def experiment(itr):
             ## assign treatments and observe new data
             for k in range(0, config.K):
                 Cd[k] = env.gen_Ch(d, k)
-                Ad[k], Pd[k] = ts.choose_A(Cd[k])
+                Ad[k] = brlsvi.choose_A(betas, Edm1, Rdm1_imp, Cd, Ad, Md, d, k)
                 Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], d, k)
-            Ed = env.gen_Ed(Ad, Edm1, d)
+            Ed = env.gen_Ed(Ad, Edm1, Rdm1, d)
             Rd = env.gen_Rd(Md, Ed, Rdm1, d)
             Od = env.gen_Od(Rdm1, d)
-            if (d + 1) % config.W == 0:
+            if True:
                 Rd_obs = Rd.copy()
             else:
                 Rd_obs = np.array([np.nan])
-            Rd_imp = Rd_obs.copy()
             ## save the new data
             dat.df.loc[d + 1, dat.col_C] = Cd.reshape(-1)
             dat.df.loc[d + 1, dat.col_P] = Pd.reshape(-1)
@@ -150,9 +179,7 @@ def experiment(itr):
             dat.df.loc[d + 1, 'E'] = Ed.reshape(-1)
             dat.df.loc[d + 1, 'R'] = Rd.reshape(-1)
             dat.df.loc[d + 1, 'R_obs'] = Rd_obs.reshape(-1)
-            dat.df.loc[d + 1, 'R_imp'] = Rd_imp.reshape(-1)
             dat.df.loc[d + 1, 'O'] = Od.reshape(-1)
-            dat.df.loc[d + 1, 'regret'] = 0
             elapse.append(time.time() - start)
 
         ## baseline rewards
@@ -165,8 +192,8 @@ def experiment(itr):
 
     dat_all = pd.concat(dat_all)
     dat_all_mean = dat_all.groupby('d').mean()
-    dat_all_std = dat_all.groupby('d').median()
-    dat_all_std.columns = [x + '_median' for x in save_cols[1:]]
+    dat_all_std = dat_all.groupby('d').std()
+    dat_all_std.columns = [x + '_std' for x in save_cols[1:]]
     out = pd.concat([dat_all_mean, dat_all_std], axis=1)
     out.to_csv(
         file_res, header=False, index=True, 

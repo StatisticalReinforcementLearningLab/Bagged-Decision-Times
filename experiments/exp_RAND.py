@@ -22,7 +22,7 @@ P0 = 0.5 # P(A = 1) in a random policy
 
 ver = '1'
 path = 'res_RAND' + ver + '/'
-file_prefix = 'version' + ver + '_J' + str(0) + '_lam' + str(0.1)
+file_prefix = 'version' + ver + '_sigma2_' + str(0)+ '_reg_' + str(0)
 file_res = path + file_prefix + '.txt'
 params_env_path = 'params_env_V2/'
 params_prior_file = 'params_prior_V3_TS.json'

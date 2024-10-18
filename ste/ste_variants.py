@@ -11,7 +11,7 @@ np.set_printoptions(suppress=True)
 
 exp = '1'
 folder_figure = 'Figures/'
-scalars = np.arange(6)
+scalars = np.arange(1, 6)
 
 params_env_path = 'params_env_V2/'
 userid_all = np.loadtxt(params_env_path + 'user_ids.txt', dtype=int)
@@ -33,7 +33,7 @@ for scalar in scalars:
         user_es.append([userid, user_adv, user_std])
     user_es = np.array(user_es)
     stes.append(np.mean(user_es[:, 1] / user_es[:, 2]))
-    print(scalar, np.mean(user_es[:, 1]), np.mean(user_es[:, 2]))
+    print(scalar, user_es.shape[0], np.mean(user_es[:, 1]), np.mean(user_es[:, 2]))
 stes = np.array(stes)
 
 ## standardized effect size
@@ -47,7 +47,7 @@ out
 fig_size = (4, 2.8)
 color = '#53446B'
 alpha = 0.7
-xtick_step = 1
+xtick_step = 0.01
 ytick_step = 0.1
 
 plt.figure(figsize=fig_size)
@@ -65,7 +65,7 @@ ytick_max = np.ceil(np.max(out[:, 1] - 0.02) / ytick_step) * ytick_step
 plt.yticks(np.arange(ytick_min, ytick_max + 0.1 * ytick_step, ytick_step))
 plt.xlabel(r'$\xi$')
 plt.ylabel('STE')
-plt.savefig(folder_figure + 'ste_' + exp + '.pdf', bbox_inches="tight")
+plt.savefig(folder_figure + 'ste_' + exp + '_2.pdf', bbox_inches="tight")
 plt.show()
 
 

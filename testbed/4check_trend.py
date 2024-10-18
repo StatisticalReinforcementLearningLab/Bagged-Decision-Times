@@ -32,9 +32,8 @@ var_dim = {
     'dO': dO,
 }
 
-# dropbox = "/Users/daiqigao/Dropbox (Harvard University)/"
-dropbox = "/Users/dqgao/Library/CloudStorage/Dropbox-HarvardUniversity/"
-folder_dat = dropbox + "*Shared/HeartStepsV2V3/Daiqi/Data/"
+dropbox = ""
+folder_dat = dropbox + "Data/"
 aim = '2'
 folder_params = 'params_env_V' + aim + '/'
 folder_figure = 'Figures/'

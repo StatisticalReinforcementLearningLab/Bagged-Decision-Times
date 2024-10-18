@@ -10,11 +10,13 @@ from env_testbed import Env
 from artificial_data import ArtificialData
 
 
-# %% SLSVI
+# %% BRLSVI
 
 
-class SLSVI():
-    def __init__(self, env_config: EnvConfigBase, gamma=0.99, standardize=False):
+class BRLSVI():
+    def __init__(self, env_config: EnvConfigBase, lam_beta: float, 
+        sigma2=1, gamma=0.99, standardize=False
+    ):
         self.K = env_config.K
         self.L = 1
         self.gamma = gamma
@@ -35,12 +37,22 @@ class SLSVI():
         self.dE = env_config.dE
         self.dR = env_config.dR
         self.dO = env_config.dO
-        self.dAC = 1 + self.dE + self.dR + self.dC
+        self.dAC = 1 + self.dE + self.dR
         self.dX = (
-            2 + (self.K - 1) * self.dM + (self.K - 1) * self.dA 
-            + 2 * self.dE + 2 * self.dR + self.dC
+            1 + self.dE + self.dR
             + self.K * self.dA * self.dAC
         )
+
+        ## prior mean = 0
+        self.prior_beta_mean = np.zeros((self.dX, 1))
+        ## prior variance = 1/lambda I
+        self.prior_beta_var = 1/lam_beta * np.diag(np.ones(self.dX))
+        self.sigma2 = sigma2 # noise variance
+
+        # create space to store posterior distribution
+        self.post_beta_mean = np.zeros((self.dX, 1))
+        self.post_beta_var = np.zeros((self.dX, self.dX))
+        self.beta_tilde = np.zeros((self.dX, 1))
 
 
     def initialize(self, comb_dat: dict, ii: int, lam_beta: float):
@@ -84,27 +96,23 @@ class SLSVI():
             comb_A_prev_h = comb_A_prev_h.reshape(ii, (self.K - 1) * self.dA)
             ## main effect
             comb_main_h = np.hstack([
-                intercept, k * intercept, 
-                comb_M_prev_h, comb_A_prev_h, 
-                comb_Edm1_h, k * comb_Edm1_h, 
-                comb_Rdm1_h, k * comb_Rdm1_h, 
-                comb_C_h, 
+                intercept, comb_Edm1_h, comb_Rdm1_h, 
             ])
             ## interaction effect
             comb_inter_h = np.zeros((ii, self.K * self.dAC))
             comb_inter_h[:, (k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
                 comb_A_h, comb_A_h * comb_Edm1_h, 
-                comb_A_h * comb_Rdm1_h, comb_A_h * comb_C_h
+                comb_A_h * comb_Rdm1_h, 
             ])
             comb_inter_h_A0 = np.zeros((ii, self.K * self.dAC))
             comb_inter_h_A0[:, (k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
                 comb_A0, comb_A0 * comb_Edm1_h, 
-                comb_A0 * comb_Rdm1_h, comb_A0 * comb_C_h
+                comb_A0 * comb_Rdm1_h, 
             ])
             comb_inter_h_A1 = np.zeros((ii, self.K * self.dAC))
             comb_inter_h_A1[:, (k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
                 comb_A1, comb_A1 * comb_Edm1_h, 
-                comb_A1 * comb_Rdm1_h, comb_A1 * comb_C_h
+                comb_A1 * comb_Rdm1_h, 
             ])
             ## concatenate main and interaction effect
             comb_X_h = np.hstack([comb_main_h, comb_inter_h])
@@ -143,8 +151,7 @@ class SLSVI():
 
 
     def get_Q(
-        self, beta: np.ndarray, comb_dat: dict, weights: np.ndarray, 
-        ii: int, lam_beta: float, theta_R: np.ndarray
+        self, beta: np.ndarray, comb_dat: dict, ii: int, theta_R=np.zeros(8)
     ):
         comb_CC = comb_dat['comb_CC'].reshape(ii, self.L * self.K, self.dC)
         comb_AA = comb_dat['comb_AA'].reshape(ii, self.L * self.K, self.dA)
@@ -172,24 +179,20 @@ class SLSVI():
         comb_A_next = np.zeros((ii, (self.K - 1) * self.dA))
         ## main effect
         comb_X_next_main = np.hstack([
-            intercept, 0 * intercept, 
-            comb_M_next, comb_A_next, 
-            comb_Edm1_next, 0 * comb_Edm1_next, 
-            comb_Rdm1_next, 0 * comb_Rdm1_next, 
-            comb_C_next, 
+            intercept, comb_Edm1_next, comb_Rdm1_next
         ])
         ## concatenate main and interaction effect
         comb_X_h_A0 = np.hstack([
             comb_X_next_main, 
             np.zeros((ii, (self.K - 1) * self.dAC)), 
             comb_A0, comb_A0 * comb_Edm1_next, 
-            comb_A0 * comb_Rdm1_next, comb_A0 * comb_C_next
+            comb_A0 * comb_Rdm1_next
         ])
         comb_X_h_A1 = np.hstack([
             comb_X_next_main, 
             np.zeros((ii, (self.K - 1) * self.dAC)), 
             comb_A1, comb_A1 * comb_Edm1_next, 
-            comb_A1 * comb_Rdm1_next, comb_A1 * comb_C_next
+            comb_A1 * comb_Rdm1_next
         ])
         ## optimal Q
         pred_Q_A0 = comb_X_h_A0 @ beta
@@ -217,27 +220,23 @@ class SLSVI():
             comb_A_prev_h = comb_A_prev_h.reshape(ii, (self.K - 1) * self.dA)
             ## main effect
             comb_main_h = np.hstack([
-                intercept, k * intercept, 
-                comb_M_prev_h, comb_A_prev_h, 
-                comb_Edm1_h, k * comb_Edm1_h, 
-                comb_Rdm1_h, k * comb_Rdm1_h, 
-                comb_C_h, 
+                intercept, comb_Edm1_h, comb_Rdm1_h, 
             ])
             ## interaction effect
             comb_inter_h = np.zeros((ii, self.K * self.dAC))
             comb_inter_h[:, (k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
                 comb_A_h, comb_A_h * comb_Edm1_h, 
-                comb_A_h * comb_Rdm1_h, comb_A_h * comb_C_h
+                comb_A_h * comb_Rdm1_h, 
             ])
             comb_inter_h_A0 = np.zeros((ii, self.K * self.dAC))
             comb_inter_h_A0[:, (k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
                 comb_A0, comb_A0 * comb_Edm1_h, 
-                comb_A0 * comb_Rdm1_h, comb_A0 * comb_C_h
+                comb_A0 * comb_Rdm1_h, 
             ])
             comb_inter_h_A1 = np.zeros((ii, self.K * self.dAC))
             comb_inter_h_A1[:, (k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
                 comb_A1, comb_A1 * comb_Edm1_h, 
-                comb_A1 * comb_Rdm1_h, comb_A1 * comb_C_h
+                comb_A1 * comb_Rdm1_h, 
             ])
             ## concatenate main and interaction effect
             comb_X_h = np.hstack([comb_main_h, comb_inter_h])
@@ -258,15 +257,31 @@ class SLSVI():
             pred_Q_A1 = comb_X_h_A1 @ beta
             pred_Q_opt = np.maximum(pred_Q_A0, pred_Q_A1)
 
-        ## weighted ridge regression
+        ## Bayesian linear regression
         mod_X = np.vstack(mod_X)
         mod_Y = np.vstack(mod_Y)
-        mod_lm = WLS(mod_Y, mod_X, weights=np.tile(weights, self.K))
-        mod_res = mod_lm.fit_regularized(
-            method='elastic_net', alpha=lam_beta, L1_wt=0
-        )
+
+        ## posterior variance
+        post_var = mod_X.T @ mod_X / self.sigma2 + mod_X.shape[0] * LA.inv(self.prior_beta_var)
+        ## round the inverse posterior variance for numerical stability
+        ## otherwise, the inverse posterior variance may be asymmetric
+        post_var = np.round(LA.inv(post_var), decimals=6)
+        self.post_beta_var = post_var.copy()
         
-        return mod_res.params.reshape(-1, 1)
+        ## posterior mean
+        post_mean = mod_X.T @ mod_Y / self.sigma2
+        post_mean += LA.inv(self.prior_beta_var) @ self.prior_beta_mean
+        post_mean = post_var @ post_mean
+        self.post_beta_mean = post_mean.copy()
+
+        ## sample from the posterior
+        rng = rd.default_rng()
+        beta_tilde = rng.multivariate_normal(
+            self.post_beta_mean.reshape(-1), self.post_beta_var, 1
+        ).reshape(-1, 1)
+        self.beta_tilde = beta_tilde.copy()
+        
+        return self.beta_tilde
 
 
     def choose_A(
@@ -290,20 +305,16 @@ class SLSVI():
 
         ## main effect
         main = np.hstack([
-            intercept, k * intercept, 
-            M_prev_h, A_prev_h, 
-            Edm1, k * Edm1, 
-            Rdm1_imp, k * Rdm1_imp, 
-            Cd[k],
+            intercept, Edm1, Rdm1_imp, 
         ])
         ## interaction effect
         inter_A0 = np.zeros(self.K * self.dAC)
         inter_A0[(k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
-            A0, A0 * Edm1, A0 * Rdm1_imp, A0 * Cd[k]
+            A0, A0 * Edm1, A0 * Rdm1_imp, 
         ])
         inter_A1 = np.zeros(self.K * self.dAC)
         inter_A1[(k * self.dAC):((k + 1) * self.dAC)] = np.hstack([
-            A1, A1 * Edm1, A1 * Rdm1_imp, A1 * Cd[k]
+            A1, A1 * Edm1, A1 * Rdm1_imp, 
         ])
         ## concatenate main and interaction effect
         X_A0 = np.hstack([main, inter_A0]).reshape(1, -1)
@@ -382,7 +393,7 @@ class SLSVI():
         comb_dat = self.gen_offline_data(env, art, N)
         ## initialize
         beta = self.initialize(comb_dat, N, 0)
-        ## iteratively improve beta through SLSVI
+        ## iteratively improve beta through BRLSVI
         itr = 0
         beta_old = np.zeros((self.dX, 1))
         theta_R = np.zeros_like(env.theta_R) ## no reward engineering

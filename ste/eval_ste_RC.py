@@ -73,8 +73,6 @@ for n in range(N_test):
     dat.df.loc[0, 'R'] = R0
     dat.df.loc[0, 'R_obs'] = R0
     dat.df.loc[0, 'R_imp'] = R0
-    M_list = [0 for _ in range(W * K - 1)]
-    A_list = [0 for _ in range(W * K - 1)]
     for d in range(0, D):
         Edm1 = np.array([dat.df.loc[d, 'E']])
         Rdm1 = np.array([dat.df.loc[d, 'R']])
@@ -110,7 +108,7 @@ for n in range(N_test):
             state_E = np.hstack([np.zeros(W), state_E])
             state_E = state_E[(d + 1):(W + d + 1)]
             state_E = state_E[::-1]
-            state_E[(d % W):] = 0
+            state_E[((d % W) + 1):] = 0
             ## combine states
             states = np.hstack([
                 state_mask_d, state_mask_h, state_C, state_M, state_A, state_R, state_E
@@ -119,8 +117,12 @@ for n in range(N_test):
             Pd[k] = 1 ## not the true prob
             Ad[k] = dqn.predict(states).item()
             Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], d, k)
-            M_list.append(Md[k].item())
-            A_list.append(Ad[k].item())
+            ## save at each time k
+            dat.df.loc[d + 1, dat.col_C[k]] = Cd[k]
+            dat.df.loc[d + 1, dat.col_P[k]] = Pd[k]
+            dat.df.loc[d + 1, dat.col_A[k]] = Ad[k]
+            dat.df.loc[d + 1, dat.col_M[k]] = Md[k]
+        ## observe at the end of bag
         Ed = env.gen_Ed(Ad, Edm1, d)
         Rd = env.gen_Rd(Md, Ed, Rdm1, d)
         Od = env.gen_Od(Rdm1, d)

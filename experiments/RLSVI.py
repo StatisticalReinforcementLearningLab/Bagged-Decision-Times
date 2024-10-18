@@ -8,13 +8,13 @@ from env_config_base import EnvConfigBase
 from dataset import Dataset
 
 
-# %% LSVI
+# %% RLSVI
 
 
-class LSVI():
+class RLSVI():
     def __init__(
         self, env_config: EnvConfigBase, H: int, lam_beta: float, 
-        sigma2=1, gamma=0.5, standardize=False
+        sigma2=1, gamma=0.99, standardize=False
     ):
         self.K = env_config.K # number of decision times in a day
         self.H = H # horizon
@@ -38,8 +38,8 @@ class LSVI():
         self.dR = env_config.dR
         self.dO = env_config.dO
         self.dX_h = [ # number of variables in the Q-function at time h
-            1 + (h // self.K + 1) * self.dE + self.dR + (h + 1) * self.dC + h * self.dA 
-            + self.dA * (1 + (h // self.K + 1) * self.dE + self.dR + (h + 1) * self.dC)
+            1 + (h // self.K + 1) * self.dE + self.dR + h * self.dM + h * self.dA + self.dC
+            + self.dA * (1 + (h // self.K + 1) * self.dE + self.dR + self.dC)
             for h in range(self.H)
         ]
         self.dX = sum(self.dX_h) # total number of variables
@@ -61,6 +61,7 @@ class LSVI():
         ## R_{d-1} and R_d may contain missing data (no imputation)
         comb_CC = comb_dat['comb_CC'].reshape(ii, self.L * self.K, self.dC)
         comb_AA = comb_dat['comb_AA'].reshape(ii, self.L * self.K, self.dA)
+        comb_MM = comb_dat['comb_MM'].reshape(ii, self.L * self.K, self.dM)
         comb_EEdm1 = comb_dat['comb_EEdm1'].reshape(ii, self.L, self.dE)
         comb_EE = comb_dat['comb_EE'].reshape(ii, self.L, self.dE)
         comb_RRdm1 = comb_dat['comb_RRdm1'].reshape(ii, self.L, self.dR)
@@ -68,41 +69,13 @@ class LSVI():
 
         if self.standardize:
             comb_CC = (comb_CC - self.C_shift) / self.C_scale
+            comb_MM = (comb_MM - self.M_shift) / self.M_scale
             comb_EEdm1 = (comb_EEdm1 - self.E_shift) / self.E_scale
             comb_EE = (comb_EE - self.E_shift) / self.E_scale
 
-        ## next episode
         intercept = np.ones((ii, 1))
         comb_A0 = np.zeros((ii, 1))
         comb_A1 = np.ones((ii, 1))
-        ## state E in previous L days
-        comb_E_prev_h = comb_EE[:, -1, :].reshape(ii, -1)
-        ## state R0
-        comb_R0_h = comb_RR[:, -1, :].reshape(ii, -1)
-        ## state C
-        comb_C_to_h = rd.choice(comb_CC.reshape(-1), size=(ii, 1), replace=True)
-        ## state M
-        comb_A_prev_h = np.zeros((ii, 0))
-        ## main effect
-        comb_main_h = np.hstack([
-            intercept, comb_E_prev_h, comb_R0_h, 
-            comb_C_to_h, comb_A_prev_h, 
-        ])
-        ## concatenate main and interaction effect
-        comb_X_h_A0 = np.hstack([
-            comb_main_h, 
-            comb_A0, comb_A0 * comb_E_prev_h, 
-            comb_A0 * comb_R0_h, comb_A0 * comb_C_to_h, 
-        ])
-        comb_X_h_A1 = np.hstack([
-            comb_main_h, 
-            comb_A1, comb_A1 * comb_E_prev_h, 
-            comb_A1 * comb_R0_h, comb_A1 * comb_C_to_h, 
-        ])
-        ## optimal Q
-        pred_Q_A0 = comb_X_h_A0 @ beta0
-        pred_Q_A1 = comb_X_h_A1 @ beta0
-        pred_Q_opt = np.maximum(pred_Q_A0, pred_Q_A1)
 
         comb_R = comb_RR[:, -1, :].copy()
         for h in range(self.H - 1, -1, -1):
@@ -111,41 +84,43 @@ class LSVI():
             comb_E_prev_h = comb_EEdm1[:, :(l + 1), :].reshape(ii, -1)
             ## state R0
             comb_R0_h = comb_RRdm1[:, 0, :].reshape(ii, -1)
-            ## state C
-            comb_C_to_h = comb_CC[:, :(h + 1), :].reshape(ii, -1)
             ## state M
+            comb_M_prev_h = comb_MM[:, :h, :].reshape(ii, -1)
+            ## state A
             comb_A_prev_h = comb_AA[:, :h, :].reshape(ii, -1)
+            ## state C
+            comb_C_h = comb_AA[:, h, :].copy()
             ## current action
             comb_A_h = comb_AA[:, h, :].copy()
             ## main effect
             comb_main_h = np.hstack([
                 intercept, comb_E_prev_h, comb_R0_h, 
-                comb_C_to_h, comb_A_prev_h, 
+                comb_M_prev_h, comb_A_prev_h, comb_C_h, 
             ])
             ## concatenate main and interaction effect
             comb_X_h = np.hstack([
                 comb_main_h, 
                 comb_A_h, comb_A_h * comb_E_prev_h, 
-                comb_A_h * comb_R0_h, comb_A_h * comb_C_to_h, 
+                comb_A_h * comb_R0_h, comb_A_h * comb_C_h, 
             ])
             comb_X_h_A0 = np.hstack([
                 comb_main_h, 
                 comb_A0, comb_A0 * comb_E_prev_h, 
-                comb_A0 * comb_R0_h, comb_A0 * comb_C_to_h, 
+                comb_A0 * comb_R0_h, comb_A0 * comb_C_h, 
             ])
             comb_X_h_A1 = np.hstack([
                 comb_main_h, 
                 comb_A1, comb_A1 * comb_E_prev_h, 
-                comb_A1 * comb_R0_h, comb_A1 * comb_C_to_h, 
+                comb_A1 * comb_R0_h, comb_A1 * comb_C_h, 
             ])
             ## response
             if h == self.H - 1:
-                comb_Y_h = comb_R + self.gamma * pred_Q_opt
+                comb_Y_h = comb_R
             else:
                 comb_Y_h = pred_Q_opt.copy()
     
             ## posterior variance
-            post_var = comb_X_h.T @ comb_X_h / self.sigma2 + LA.inv(self.prior_beta_var[h])
+            post_var = comb_X_h.T @ comb_X_h / self.sigma2 + comb_X_h.shape[0] * LA.inv(self.prior_beta_var[h])
             ## round the inverse posterior variance for numerical stability
             ## otherwise, the inverse posterior variance may be asymmetric
             post_var = np.round(LA.inv(post_var), decimals=6)
@@ -184,33 +159,35 @@ class LSVI():
         E_prev_h = dat.df.loc[m:d, 'E'].values  ## including m and d
         ## state R0
         R0_h = dat.df.loc[m:m, 'R'].values  ## dat.df.loc[m, 'R'] is a float
-        ## state C
-        C_to_h = dat.df.loc[(m + 1):(d + 1), dat.col_C].values.reshape(-1)
-        if k < self.K - 1:
-            C_to_h = C_to_h[:-(self.K - 1 - k)]
         ## state M
+        M_prev_h = dat.df.loc[(m + 1):(d + 1), dat.col_M].values.reshape(-1)
+        M_prev_h = M_prev_h[:-(self.K - k)]
+        ## state A
         A_prev_h = dat.df.loc[(m + 1):(d + 1), dat.col_A].values.reshape(-1)
         A_prev_h = A_prev_h[:-(self.K - k)]
+        ## state C
+        C_h = np.array([dat.df.loc[(d + 1), dat.col_C[k]]])
 
         if self.standardize:
-            C_to_h = (C_to_h - self.C_shift) / self.C_scale
+            C_h = (C_h - self.C_shift) / self.C_scale
+            M_prev_h = (M_prev_h - self.M_shift) / self.M_scale
             E_prev_h = (E_prev_h - self.E_shift) / self.E_scale
 
         ## main effect
         main = np.hstack([
             intercept, E_prev_h, R0_h, 
-            C_to_h, A_prev_h, 
+            M_prev_h, A_prev_h, C_h, 
         ])
         ## concatenate main and interaction effect
         X_A0 = np.hstack([
             main, 
             A0, A0 * E_prev_h, 
-            A0 * R0_h, A0 * C_to_h, 
+            A0 * R0_h, A0 * C_h, 
         ]).reshape(1, -1)
         X_A1 = np.hstack([
             main, 
             A1, A1 * E_prev_h, 
-            A1 * R0_h, A1 * C_to_h, 
+            A1 * R0_h, A1 * C_h, 
         ]).reshape(1, -1)
 
         ## greedy action

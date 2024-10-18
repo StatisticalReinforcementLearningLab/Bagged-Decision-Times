@@ -11,9 +11,8 @@ np.set_printoptions(suppress=True)
 # %% read data
 
 
-# dropbox = "/Users/daiqigao/Dropbox (Harvard University)/"
-dropbox = "/Users/dqgao/Library/CloudStorage/Dropbox-HarvardUniversity/"
-folder_dat = dropbox + "*Shared/HeartStepsV2V3/Daiqi/Data/"
+dropbox = ""
+folder_dat = dropbox + "Data/"
 folder_figure = 'Figures/'
 aim = '2'
 file_dat = folder_dat + 'aim-' + aim + '_with_R.csv'

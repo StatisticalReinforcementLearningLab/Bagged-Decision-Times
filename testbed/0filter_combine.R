@@ -2,18 +2,14 @@ library(dplyr)
 library(rjson)
 library(lubridate)
 
-# dropbox = "/Users/daiqigao/Dropbox (Harvard University)/"
-dropbox = "/Users/dqgao/Library/CloudStorage/Dropbox-HarvardUniversity/"
-code.folder = paste0(dropbox, "Research/Projects/HS V5/RealData")
-data.folder = paste0(dropbox, "*Shared/HeartStepsV2V3/Daiqi/Data/")
+dropbox = ""
+data.folder = paste0(dropbox, "Data/")
 csv.folder = paste0(data.folder, "csv files/")
 second.proc.folder = paste0(data.folder, "second_processing/")
 third.proc.folder = paste0(data.folder, "third_processing/unwinsorized_data/")
 
-## the folder "processed_data" is copied from "HeartStepsV2V3/Prasidh/second_processing/processed_data"
 processed.data.folder = paste0(second.proc.folder, "processed_data/")
 
-## the folder "final_data" is copied from "HeartStepsV2V3/Prasidh/second_processing/final_data"
 load(paste0(second.proc.folder, "final_data/Idtable.Rdata"))
 
 aims = c("aim-2", "aim-3")
