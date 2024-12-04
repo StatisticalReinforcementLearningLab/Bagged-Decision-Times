@@ -12,32 +12,33 @@ from dataset import Dataset
 
 class ArtificialData:
     def __init__(self, params_art: dict, env_config: EnvConfigBase, L: int):
-        self.C = params_art["C"]
-        self.E0 = params_art["E0"]
-        self.R0 = params_art["R0"]
+        if params_art:
+            self.C = params_art["C"]
+            self.E0 = params_art["E0"]
+            self.R0 = params_art["R0"]
 
-        self.prob = params_art["prob"]
+            self.prob = params_art["prob"]
 
-        self.theta_M_mean = params_art["theta_M_mean"]
-        self.theta_M_var = params_art["theta_M_var"]
-        self.sigma2_M = params_art["sigma2_M"]
+            self.theta_M_mean = params_art["theta_M_mean"]
+            self.theta_M_var = params_art["theta_M_var"]
+            self.sigma2_M = params_art["sigma2_M"]
 
-        self.theta_E_mean = params_art["theta_E_mean"]
-        self.theta_E_var = params_art["theta_E_var"]
-        self.sigma2_E = params_art["sigma2_E"]
+            self.theta_E_mean = params_art["theta_E_mean"]
+            self.theta_E_var = params_art["theta_E_var"]
+            self.sigma2_E = params_art["sigma2_E"]
 
-        self.theta_R_mean = params_art["theta_R_mean"]
-        self.theta_R_var = params_art["theta_R_var"]
-        self.sigma2_R = params_art["sigma2_R"]
+            self.theta_R_mean = params_art["theta_R_mean"]
+            self.theta_R_var = params_art["theta_R_var"]
+            self.sigma2_R = params_art["sigma2_R"]
 
-        self.theta_O_mean = params_art["theta_O_mean"]
-        self.theta_O_var = params_art["theta_O_var"]
-        self.sigma2_O = params_art["sigma2_O"]
+            self.theta_O_mean = params_art["theta_O_mean"]
+            self.theta_O_var = params_art["theta_O_var"]
+            self.sigma2_O = params_art["sigma2_O"]
 
-        self.resid_M = params_art["resid_M"]
-        self.resid_E = params_art["resid_E"]
-        self.resid_R = params_art["resid_R"]
-        self.resid_O = params_art["resid_O"]
+            self.resid_M = params_art["resid_M"]
+            self.resid_E = params_art["resid_E"]
+            self.resid_R = params_art["resid_R"]
+            self.resid_O = params_art["resid_O"]
 
         self.dC = env_config.dC
         self.dA = env_config.dA

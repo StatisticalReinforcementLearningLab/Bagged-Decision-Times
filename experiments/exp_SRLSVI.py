@@ -21,8 +21,8 @@ jobid = int(sys.argv[1])
 # %% parameters
 
 
-sigma2list = [0.001, 0.01, 0.1, 1]
-reglist = [0.1, 1, 10, 100, 1000]
+sigma2list = [0.01, 0.1, 1]
+reglist = [0.1, 1, 10, 100]
 array_idx = np.unravel_index(jobid, (len(sigma2list), len(reglist)))
 J = 0 # number of artifial episodes
 sigma2 = sigma2list[array_idx[0]]
@@ -39,7 +39,7 @@ ver = '1'
 path = 'res_SRLSVI' + ver + '/'
 file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
-params_env_path = 'params_env_V2/'
+params_env_path = 'params_env_permuted_V2/'
 params_prior_file = 'params_prior_V3.json'
 params_std_file = 'params_std_V2.json'
 
@@ -53,17 +53,7 @@ seed = 2023
 
 
 def create_art(config, L):
-    with open(params_prior_file, 'r') as file:
-        art_params = json.load(file)
-    for key, value in art_params.items():
-        art_params[key] = np.array(value)
-    art_params['prob'] = 0.5 # action assignment probability
-    ## shift the prior simultaneously with the testbed variants, assuming that 
-    ## the previous trial has approximately the same STE as the new trial
-    art_params['theta_R_mean'][1:6] += 0
-    art_params['theta_R_mean'][6] += 0
-    art_params['theta_E_mean'][2:7] -= 0
-    return ArtificialData(art_params, config, L)
+    return ArtificialData(params_art=None, env_config=config, L=L)
 
 
 # %% experiments

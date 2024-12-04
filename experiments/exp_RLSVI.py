@@ -21,8 +21,8 @@ jobid = int(sys.argv[1])
 # %% parameters
 
 
-sigma2list = [0.002, 0.005, 0.01, 0.02]
-reglist = [1, 2, 5, 10, 20]
+sigma2list = [0.005, 0.01, 0.02]
+reglist = [1, 2, 5, 10]
 array_idx = np.unravel_index(jobid, (len(sigma2list), len(reglist)))
 J = 0 # number of artifial episodes
 sigma2 = sigma2list[array_idx[0]]
@@ -38,7 +38,7 @@ ver = '1'
 path = 'res_RLSVI' + ver + '/'
 file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
-params_env_path = 'params_env_V2/'
+params_env_path = 'params_env_permuted_V2/'
 params_prior_file = 'params_prior_V3.json'
 params_std_file = 'params_std_V2.json'
 
@@ -52,12 +52,7 @@ seed = 2023
 
 
 def create_art(config, L):
-    with open(params_prior_file, 'r') as file:
-        art_params = json.load(file)
-    for key, value in art_params.items():
-        art_params[key] = np.array(value)
-    art_params['prob'] = 0.5 # actions assignment probability
-    return ArtificialData(art_params, config, L)
+    return ArtificialData(params_art=None, env_config=config, L=L)
 
 
 # %% experiments
