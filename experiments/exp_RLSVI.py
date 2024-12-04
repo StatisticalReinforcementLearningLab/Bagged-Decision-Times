@@ -38,8 +38,7 @@ ver = '1'
 path = 'res_RLSVI' + ver + '/'
 file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
-params_env_path = 'params_env_permuted_V2/'
-params_prior_file = 'params_prior_V3.json'
+params_env_path = 'params_env_V2/'
 params_std_file = 'params_std_V2.json'
 
 userid_all = np.loadtxt(params_env_path + 'user_ids.txt', dtype=int)

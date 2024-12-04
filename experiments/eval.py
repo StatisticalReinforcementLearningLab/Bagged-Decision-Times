@@ -10,7 +10,7 @@ np.set_printoptions(suppress=True)
 # %% parameters
 
 
-exp = '28'
+exp = '1'
 ver = '1'
 path_figure = 'Figures/'
 
@@ -90,7 +90,7 @@ plt.show()
 # %%
 
 
-exp = '28'
+exp = '1'
 ver = '1'
 path_figure = 'Figures/'
 

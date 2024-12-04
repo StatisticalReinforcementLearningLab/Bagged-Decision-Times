@@ -4,20 +4,23 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
 
 ## File Descriptions
 
-- `/testbed`: Preprocess the HeartSteps data and build the testbed. The numbered scripts need to be run sequentially.
-  - `/0filter_combine.R`: Extracts necessary variables from the raw and processed data in HeartSteps V2 and V3.
-  - `/1estimate_R.py`: Constructs the rewards using linear dynamical systems for HeartSteps V2.
-  - `/2build_dag.py`: Builds the vanilla testbed. The files `2build_dag_RE.py`, `2build_dag_AR.py`, and `2build_dag_RC.py` construct testbed variants that violate the assumptions in the DAG by representing additional arrows $R_{d-1} \to E_d$, $A_{d, 1:K} \to R_d$, and $R_{d-1}, E_{d-1} \to C_{d, 1:K}$, respectively.
-  - `/3diagnostics.py`: Performs model diagnostics for the vanilla testbed.
-  - `/4check_trend.py`: Checks the trend of generated data.
-  - `/lds.py`: Modifies the script in the [SSM](https://github.com/lindermanlab/ssm/blob/master/ssm/lds.py) package to remove the direct influence from the input vector to the emission variable. Fixes the bug in initializing $Var(v_d^{\prime})$ when the latent variable and the emission variable have the same dimension.
-  - `/regression.py`: Implements linear regression with $L_2$ and Laplacian penalties, as well as Bayesian linear regression.
-
-- `/base`: Contains scripts used to check the testbed, estimate the standardized treatment effect (STE), and run experiments.
+- Base files that will be used for both running experiments and estimating standardized treatment effect (STE).
   - `/dataset.py`: A container that stores the generated episodes.
   - `/env_testbed.py`: Implements the vanilla testbed. The files `env_testbed_RE.py`, `env_testbed_AR.py`, and `env_testbed_RC.py` are testbed variants that violate the assumptions in the DAG.
   - `/env_config_base.py`: Base environment configurator.
   - `/mrt.py`: Runs a micro-randomized trial (MRT) that selects actions with a fixed probability in the vanilla testbed. The files `mrt_RE.py`, `mrt_AR.py`, and `mrt_RC.py` run the MRT in different testbed variants.
+
+- `/experiments`: Contains scripts to run experiments for BRLSVI, RLSVI, SRLSVI, and RAND.
+  - `/exp_BRLSVI.py`, `/exp_RLSVI.py`, `/exp_SRLSVI.py`, and `/exp_RAND.py` run the experiments for the four algorithms. `/exp_BRLSVIS.py` runs the experiment for BRLSVI with $\check{S}$.
+  - `/env_config.py`, ..., `/env_config4.py` are the configurators for the four testbed variants in the paper. `env_config_AR.py` is the configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG.
+  - `artificial_data.py`: Generates artificial data in BRLSVI.
+  - `BRLSVI.py`: Updates the policy in BRLSVI.
+  - `RLSVI.py`: Updates the policy in RLSVI.
+  - `SRLSVI.py`: Updates the policy in SRLSVI.
+  - `eval.py`: Compares different algorithms by drawing the figures.
+  - `/params_env_V2`, `/params_env_RE_V2.py`, `/params_env_AR_V2.py`, `/params_env_RC_V2.py`: Contains the testbed parameters for the vanilla testbed and other testbed variants with misspecified DAGs. It preserves confidentiality via perturbations.
+  - `params_std_V2.json`: Contains the standardization and truncation parameters.
+  - `/test_perturbed_testbed`: Contains a replication of Figure 2(a) with the perturbed testbed parameters.
 
 - `/ste`: Estimates the STE for testbed variants.
   - `/env_config_base.py`: Base environment configurator. The parameter $W = 1$ means that all the bag-specific rewards are observed.
@@ -28,12 +31,4 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
   - `/env_config3.py`: Configurator for a testbed variant that enhances both the positive and the negative effects.
   - `/env_config_AR.py`: Configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG and reduces the positive effect in $A_{d, 1:K} \to R_d$.
   - `/ste_variants.py`: Calculates the STE and draws the figures.
-
-- `/experiments`: Contains scripts to run experiments for BRLSVI, RLSVI, SRLSVI, and RAND.
-  - `/exp_BRLSVI.py`, `/exp_RLSVI.py`, `/exp_SRLSVI.py`, and `/exp_RAND.py` run the experiments for the four algorithms. `/exp_BRLSVIS.py` runs the experiment for BRLSVI with $\check{S}$.
-  - `/env_config.py`, ..., `/env_config4.py` are the configurators for the four testbed variants in the paper. `env_config_AR.py` is the configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG.
-  - `artificial_data.py`: Generates artificial data in BRLSVI.
-  - `BRLSVI.py`: Updates the policy in BRLSVI.
-  - `RLSVI.py`: Updates the policy in RLSVI.
-  - `SRLSVI.py`: Updates the policy in SRLSVI.
-  - `eval.py`: Compares different algorithms by drawing the figures.
+  - `/params_env_V2`: Need to be copied into this folder.
