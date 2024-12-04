@@ -31,4 +31,4 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
   - `/env_config3.py`: Configurator for a testbed variant that enhances both the positive and the negative effects.
   - `/env_config_AR.py`: Configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG and reduces the positive effect in $A_{d, 1:K} \to R_d$.
   - `/ste_variants.py`: Calculates the STE and draws the figures.
-  - `/params_env_V2`: Need to be copied into this folder.
+  - The testbed parameters `/params_env_V2`, `/params_env_RE_V2.py`, `/params_env_AR_V2.py`, `/params_env_RC_V2.py`, `params_std_V2.json` need to be copied into this folder.
