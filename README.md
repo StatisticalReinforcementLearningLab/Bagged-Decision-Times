@@ -4,7 +4,7 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
 
 ## File Descriptions
 
-- Base files that will be used for both running experiments and estimating standardized treatment effect (STE).
+- Base files that will be used for both running experiments for the proposed algorithm and estimating standardized treatment effect (STE).
   - `/dataset.py`: A container that stores the generated episodes.
   - `/env_testbed.py`: Implements the vanilla testbed. The files `env_testbed_RE.py`, `env_testbed_AR.py`, and `env_testbed_RC.py` are testbed variants that violate the assumptions in the DAG.
   - `/env_config_base.py`: Base environment configurator.
@@ -18,9 +18,10 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
   - `RLSVI.py`: Updates the policy in RLSVI.
   - `SRLSVI.py`: Updates the policy in SRLSVI.
   - `eval.py`: Compares different algorithms by drawing the figures.
-  - `/params_env_V2`, `/params_env_RE_V2.py`, `/params_env_AR_V2.py`, `/params_env_RC_V2.py`: Contains the testbed parameters for the vanilla testbed and other testbed variants with misspecified DAGs. It preserves confidentiality via perturbations.
+  - `run_BRLSVI.sh`, `run_RLSVI.sh`, `run_SRLSVI.sh`, `run_RAND.sh`, and `run_BRLSVIS.sh` are scripts that submit their respective experiment code to the server.
+  - `/params_env_V2`, `/params_env_RE_V2.py`, `/params_env_AR_V2.py`, `/params_env_RC_V2.py`: Contain parameters for the vanilla testbed and other testbed variants with misspecified DAGs. It preserves confidentiality via perturbations.
   - `params_std_V2.json`: Contains the standardization and truncation parameters.
-  - `/test_perturbed_testbed`: Contains a replication of Figure 2(a) with the perturbed testbed parameters.
+  - `/test_perturbed_testbed`: Contains a replication of Figure 2(a) using the perturbed testbed.
 
 - `/ste`: Estimates the STE for testbed variants.
   - `/env_config_base.py`: Base environment configurator. The parameter $W = 1$ means that all the bag-specific rewards are observed.
@@ -31,4 +32,4 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
   - `/env_config3.py`: Configurator for a testbed variant that enhances both the positive and the negative effects.
   - `/env_config_AR.py`: Configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG and reduces the positive effect in $A_{d, 1:K} \to R_d$.
   - `/ste_variants.py`: Calculates the STE and draws the figures.
-  - The testbed parameters `/params_env_V2`, `/params_env_RE_V2.py`, `/params_env_AR_V2.py`, `/params_env_RC_V2.py`, `params_std_V2.json` need to be copied into this folder.
+  - The testbed parameter files `/params_env_V2`, `/params_env_RE_V2.py`, `/params_env_AR_V2.py`, `/params_env_RC_V2.py`, `params_std_V2.json` need to be copied into this folder before running the code.
