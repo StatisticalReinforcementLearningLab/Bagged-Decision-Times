@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --account=murphy_lab
-#SBATCH -p serial_requeue
+#SBATCH --account=xxxx
+#SBATCH -p xxxx
 #SBATCH -n 1
 #SBATCH -c 50
 #SBATCH --mem-per-cpu=1g
