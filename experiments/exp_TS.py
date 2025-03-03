@@ -8,8 +8,7 @@ from env_config import EnvConfig
 from env_testbed import Env
 from dataset import Dataset
 from mrt import MRT
-from artificial_data import ArtificialData
-from BRLSVI import BRLSVI
+from TS import TS
 import time
 from joblib import Parallel, delayed
 import json
@@ -21,22 +20,19 @@ jobid = int(sys.argv[1])
 # %% parameters
 
 
-sigma2list = [0.002, 0.005, 0.01]
+sigma2list = [0.2, 0.5, 1]
 reglist = [2, 5, 10, 20]
 array_idx = np.unravel_index(jobid, (len(sigma2list), len(reglist)))
-J = 0 # number of artifial episodes
 sigma2 = sigma2list[array_idx[0]]
 reg = reglist[array_idx[1]]
-lam_beta = reg / sigma2 ## lamlist[array_idx[1]] # tuning parameter for beta
-lam_theta = 0.1 # tuning parameter for theta
+lam_beta = reg / sigma2
+
 
 ## algorithm parameters
-L = 1 # number of days in a trajectory
-B = 1 # number of bootstrap samples
 P0 = 0.5 # initial P(A = 1)
 
 ver = '1'
-path = 'res_BRLSVI' + ver + '/'
+path = 'res_TS' + ver + '/'
 file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
 params_env_path = 'params_env_V2/'
@@ -46,13 +42,6 @@ userid_all = np.loadtxt(params_env_path + 'user_ids.txt', dtype=int)
 nitr = 100 # replications
 n_jobs = 50 # parallel computing
 seed = 2023
-
-
-# %% helper
-
-
-def create_art(config, L):
-    return ArtificialData(params_art=None, env_config=config, L=L)
 
 
 # %% experiments
@@ -77,7 +66,6 @@ def experiment(itr):
             userid, params_env_path, params_std_file,
         )
         env = Env(config)
-        art = create_art(config, L)
 
         dat = Dataset(config.userid, config.K, config.D)
         elapse = []
@@ -126,21 +114,13 @@ def experiment(itr):
             elapse.append(time.time() - start)
             
 
-        ## initialize BRLSVI
-        brlsvi = BRLSVI(config, lam_beta, sigma2, standardize=False)
-        # opt_beta = brlsvi.get_opt_Q(env, art)
-        betas = np.zeros((brlsvi.dX, B))
-
-        ## bagged RLSVI
+        ts = TS(config, lam_beta, sigma2, standardize=False)
+        ## Thompson sampling
         for d in range(config.D_warm, config.D):
             start = time.time()
-            b = 0
-            comb_dat = art.combine_dataset(dat, d, J)
-            ## BRLSVI
-            beta = brlsvi.get_Q(betas[:, [b]], comb_dat, d + J)
-            betas[:, [b]] = beta.copy()
+            ts.update(dat, d, k=0)
             
-            Rdm1_imp = dat.df.loc[d, 'R_obs']
+            ## new state at stage k
             Edm1 = np.array([dat.df.loc[d, 'E']])
             Rdm1 = np.array([dat.df.loc[d, 'R']])
             Cd = np.zeros((config.K, config.dC))
@@ -150,7 +130,7 @@ def experiment(itr):
             ## assign treatments and observe new data
             for k in range(0, config.K):
                 Cd[k] = env.gen_Ch(d, k)
-                Ad[k] = brlsvi.choose_A(betas, Edm1, Rdm1_imp, Cd, Ad, Md, d, k)
+                Ad[k], Pd[k] = ts.choose_A(Edm1, Rdm1, Cd[k])
                 Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], d, k)
             Ed = env.gen_Ed(Ad, Edm1, d)
             Rd = env.gen_Rd(Md, Ed, Rdm1, d)

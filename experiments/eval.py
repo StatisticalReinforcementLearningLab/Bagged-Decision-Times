@@ -32,15 +32,17 @@ opt_sigma2s = {
     'SRLSVI': 1, 
     'RLSVI': 0.01, 
     'RAND': 0,
+    'TS': 0.2,
 }
 opt_regs = {
     'BRLSVI': 5, 
     'SRLSVI': 10, 
     'RLSVI': 2, 
     'RAND': 0,
+    'TS': 2,
 }
-methods = ['BRLSVI', 'SRLSVI', 'RLSVI', 'RAND']
-method_names = ['BRLSVI', 'SRLSVI', 'RLSVI', 'RAND']
+methods = ['BRLSVI', 'SRLSVI', 'RLSVI', 'RAND', 'TS']
+method_names = ['BRLSVI', 'SRLSVI', 'RLSVI', 'RAND', 'TS']
 
 R_cum_df = pd.DataFrame()
 for m in methods:
@@ -65,12 +67,13 @@ for m in methods:
     })])
 
 
-colors = ['#b2182b', '#993404', '#253494', '#807dba']
+colors = ['#b2182b', '#993404', '#253494', '#807dba', '#5F968C']
+linestyles = ['-', '--', ':', '-.', (0, (3, 1, 1, 1, 1, 1))]
 for i, m in enumerate(methods):
     dat_plot = R_cum_df.loc[R_cum_df['method'] == m]
     line, = plt.plot(
         dat_plot['time'], dat_plot['value'], 
-        label=f'{method_names[i]}', color = colors[i]
+        label=f'{method_names[i]}', color = colors[i], linestyle=linestyles[i]
     )
     plt.fill_between(
         dat_plot['time'], 
@@ -103,7 +106,7 @@ opt_regs = {
     'BRLSVIS': 5, 
 }
 methods = ['BRLSVI', 'BRLSVIS']
-method_names = [r'$S_{hat}$', r'$S_{check}$']
+method_names = [r'$S^{hat}$', r'$S^{check}$']
 
 R_cum_df = pd.DataFrame()
 for m in methods:

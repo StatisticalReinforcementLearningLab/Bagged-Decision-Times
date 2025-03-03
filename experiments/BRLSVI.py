@@ -283,7 +283,7 @@ class BRLSVI():
         
         ## posterior mean
         post_mean = mod_X.T @ mod_Y / self.sigma2
-        post_mean += LA.inv(self.prior_beta_var) @ self.prior_beta_mean
+        post_mean += mod_X.shape[0] * LA.inv(self.prior_beta_var) @ self.prior_beta_mean
         post_mean = post_var @ post_mean
         self.post_beta_mean = post_mean.copy()
 

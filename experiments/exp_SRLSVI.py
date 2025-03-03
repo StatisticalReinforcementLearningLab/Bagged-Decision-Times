@@ -131,7 +131,7 @@ def experiment(itr):
         # opt_beta = srlsvi.get_opt_Q(env, art)
         betas = np.zeros((srlsvi.dX, B))
 
-        ## bootstrapped stationary LSVI
+        ## stationary RLSVI
         for d in range(config.D_warm, config.D):
             start = time.time()
             b = 0
