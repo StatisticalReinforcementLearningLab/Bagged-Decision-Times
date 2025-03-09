@@ -23,7 +23,7 @@ class EnvConfig(EnvConfigBase):
         params_env['theta_R'][1:6] += 0
         params_env['theta_R'][1:6] = np.maximum(params_env['theta_R'][1:6], 0)
         params_env['theta_M'][1:3] = np.maximum(params_env['theta_M'][1:3], 0)
-        params_env['theta_R'][8:13] /= 2
+        params_env['theta_R'][8:13] /= 5
         params_env['theta_R'][6] += 0
         params_env['theta_E'][2:7] -= 0
 
