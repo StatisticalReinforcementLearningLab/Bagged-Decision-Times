@@ -193,15 +193,15 @@ class BRLSVI():
         ## concatenate main and interaction effect
         comb_X_h_A0 = np.hstack([
             comb_X_next_main, 
-            np.zeros((ii, (self.K - 1) * self.dAC)), 
             comb_A0, comb_A0 * comb_Edm1_next, 
-            comb_A0 * comb_Rdm1_next, comb_A0 * comb_C_next
+            comb_A0 * comb_Rdm1_next, comb_A0 * comb_C_next, 
+            np.zeros((ii, (self.K - 1) * self.dAC)), 
         ])
         comb_X_h_A1 = np.hstack([
             comb_X_next_main, 
-            np.zeros((ii, (self.K - 1) * self.dAC)), 
             comb_A1, comb_A1 * comb_Edm1_next, 
-            comb_A1 * comb_Rdm1_next, comb_A1 * comb_C_next
+            comb_A1 * comb_Rdm1_next, comb_A1 * comb_C_next, 
+            np.zeros((ii, (self.K - 1) * self.dAC)), 
         ])
         ## optimal Q
         pred_Q_A0 = comb_X_h_A0 @ beta

@@ -4,12 +4,12 @@
 import numpy as np
 import numpy.random as rd
 import pandas as pd
-from env_config import EnvConfig
-from env_testbed import Env
+from env_config_MA import EnvConfig
+from env_testbed_MA import Env
 from dataset import Dataset
-from mrt import MRT
+from mrt_MA import MRT
 from artificial_data import ArtificialData
-from BRLSVIS import BRLSVI
+from BRLSVI_Sppp import BRLSVI
 import time
 from joblib import Parallel, delayed
 import json
@@ -35,11 +35,11 @@ L = 1 # number of days in a trajectory
 B = 1 # number of bootstrap samples
 P0 = 0.5 # initial P(A = 1)
 
-ver = '1'
+ver = '26'
 path = 'res_BRLSVIS' + ver + '/'
 file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
-params_env_path = 'params_env_V2/'
+params_env_path = 'params_env_MA_V2/'
 params_std_file = 'params_std_V2.json'
 
 userid_all = np.loadtxt(params_env_path + 'user_ids.txt', dtype=int)
@@ -103,7 +103,7 @@ def experiment(itr):
                 Cd[k] = env.gen_Ch(d, k)
                 Pd[k] = P0
                 Ad[k] = rd.choice([0, 1], size=1, p=[1 - Pd[k, 0], Pd[k, 0]])
-                Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], d, k)
+                Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], Md, d, k)
             Ed = env.gen_Ed(Ad, Edm1, d)
             Rd = env.gen_Rd(Md, Ed, Rdm1, d)
             Od = env.gen_Od(Rdm1, d)
@@ -131,7 +131,7 @@ def experiment(itr):
         # opt_beta = brlsvi.get_opt_Q(env, art)
         betas = np.zeros((brlsvi.dX, B))
 
-        ## bootstrapped stationary LSVI
+        ## bagged RLSVI
         for d in range(config.D_warm, config.D):
             start = time.time()
             b = 0
@@ -151,7 +151,7 @@ def experiment(itr):
             for k in range(0, config.K):
                 Cd[k] = env.gen_Ch(d, k)
                 Ad[k] = brlsvi.choose_A(betas, Edm1, Rdm1_imp, Cd, Ad, Md, d, k)
-                Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], d, k)
+                Md[k] = env.gen_Mh(Edm1, Rdm1, Cd[k], Ad[k], Md, d, k)
             Ed = env.gen_Ed(Ad, Edm1, d)
             Rd = env.gen_Rd(Md, Ed, Rdm1, d)
             Od = env.gen_Od(Rdm1, d)

@@ -9,6 +9,6 @@
 #SBATCH -o OUTPUT/out_%A_%a.txt
 #SBATCH -e OUTPUT/err_%A_%a.txt
 #SBATCH --array 0-11
-#SBATCH -J exp_BRLSVIS
+#SBATCH -J exp_BRLSVI_Sp
 
-python exp_BRLSVIS.py $SLURM_ARRAY_TASK_ID
+python exp_BRLSVI_Sp.py $SLURM_ARRAY_TASK_ID
