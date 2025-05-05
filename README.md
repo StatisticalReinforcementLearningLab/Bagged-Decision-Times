@@ -6,13 +6,13 @@ Code for the paper "Harnessing Causality in Reinforcement Learning With Bagged D
 
 - Base files that will be used for both running experiments for the proposed algorithm and estimating standardized treatment effect (STE).
   - `/dataset.py`: A container that stores the generated episodes.
-  - `/env_testbed.py`: Implements the vanilla testbed. The files `env_testbed_RE.py`, `env_testbed_AR.py`, and `env_testbed_RC.py` are testbed variants that violate the assumptions in the DAG. `env_testbed_MA.py` allows interaction effect between $M_{d, 1:k-1}$ and $A_{d, k}$ on $M_{d, k}$.
+  - `/env_testbed.py`: Implements the vanilla testbed. The files `env_testbed_RE.py`, `env_testbed_AR.py`, and `env_testbed_RC.py` are testbed variants that violate the assumptions in the DAG. `env_testbed_MA.py` allows interaction effects between $M_{d, 1:k-1}$ and $A_{d, k}$ on $M_{d, k}$.
   - `/env_config_base.py`: Base environment configurator.
   - `/mrt.py`: Runs a micro-randomized trial (MRT) that selects actions with a fixed probability in the vanilla testbed. The files `mrt_RE.py`, `mrt_AR.py`, `mrt_RC.py`, and `mrt_MA.py` run the MRT in different testbed variants.
 
 - `/experiments`: Contains scripts to run experiments for BRLSVI, RLSVI, SRLSVI, and RAND.
   - `/exp_BRLSVI.py`, `/exp_RLSVI.py`, `/exp_SRLSVI.py`, and `/exp_RAND.py` run the experiments for the four algorithms. 
-  - `/env_config.py`, ..., `/env_config4.py` are the configurators for the four testbed variants in the paper. `env_config_AR.py` is the configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG. `env_config_MA.py` is the configurator for a testbed variant that allows interaction effect between $M_{d, 1:k-1}$ and $A_{d, k}$.
+  - `/env_config.py`, ..., `/env_config4.py` are the configurators for the four testbed variants in the paper. `env_config_AR.py` is the configurator for a testbed variant that violates the assumption $A_{d, 1:K} \to R_d$ in the DAG. `env_config_MA.py` is the configurator for a testbed variant that allows interaction effects between $M_{d, 1:k-1}$ and $A_{d, k}$.
   - `artificial_data.py`: Combines observed and artificial data (in the current experiments, no artificial data is used).
   - `BRLSVI.py`: Updates the policy in BRLSVI.
   - `RLSVI.py`: Updates the policy in RLSVI.
