@@ -35,8 +35,8 @@ L = 1 # number of days in a trajectory
 B = 1 # number of bootstrap samples
 P0 = 0.5 # initial P(A = 1)
 
-ver = '28'
-path = 'res_BRLSVISS' + ver + '/'
+ver = '1'
+path = 'res_BRLSVI_Spp' + ver + '/'
 file_prefix = 'version' + ver + '_sigma2_' + str(sigma2)+ '_reg_' + str(reg)
 file_res = path + file_prefix + '.txt'
 params_env_path = 'params_env_MA_V2/'

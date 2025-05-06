@@ -139,19 +139,19 @@ class BRLSVI():
             comb_inter_h[:, sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
                 comb_A_h, comb_A_h * comb_Edm1_h, 
                 comb_A_h * comb_Rdm1_h, 
-                comb_A_h * comb_A_prev_h[:, :(k * self.dM)],
+                comb_A_h * comb_A_prev_h[:, :(k * self.dA)],
             ])
             comb_inter_h_A0 = np.zeros((ii, sum(self.dAC)))
             comb_inter_h_A0[:, sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
                 comb_A0, comb_A0 * comb_Edm1_h, 
                 comb_A0 * comb_Rdm1_h, 
-                comb_A0 * comb_A_prev_h[:, :(k * self.dM)],
+                comb_A0 * comb_A_prev_h[:, :(k * self.dA)],
             ])
             comb_inter_h_A1 = np.zeros((ii, sum(self.dAC)))
             comb_inter_h_A1[:, sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
                 comb_A1, comb_A1 * comb_Edm1_h, 
                 comb_A1 * comb_Rdm1_h, 
-                comb_A1 * comb_A_prev_h[:, :(k * self.dM)],
+                comb_A1 * comb_A_prev_h[:, :(k * self.dA)],
             ])
             ## concatenate main and interaction effect
             comb_X_h = np.hstack([comb_main_h, comb_inter_h])
@@ -229,12 +229,12 @@ class BRLSVI():
         inter_A0 = np.zeros(sum(self.dAC))
         inter_A0[sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
             A0, A0 * Edm1, A0 * Rdm1_imp, 
-            A0 * A_prev_h[:(k * self.dC)],
+            A0 * A_prev_h[:(k * self.dA)],
         ])
         inter_A1 = np.zeros(sum(self.dAC))
         inter_A1[sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
             A1, A1 * Edm1, A1 * Rdm1_imp, 
-            A1 * A_prev_h[:(k * self.dC)],
+            A1 * A_prev_h[:(k * self.dA)],
         ])
         ## concatenate main and interaction effect
         X_A0 = np.hstack([main, inter_A0]).reshape(1, -1)

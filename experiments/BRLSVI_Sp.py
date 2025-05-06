@@ -37,7 +37,7 @@ class BRLSVI():
         self.dE = env_config.dE
         self.dR = env_config.dR
         self.dO = env_config.dO
-        self.dAC = [1 + self.dE + self.dR + self.dC + k * self.dM for k in range(self.K)]
+        self.dAC = [1 + self.dE + self.dR + self.dC + k * self.dM + k * self.dA for k in range(self.K)]
         self.dX = (
             2 + (self.K - 1) * self.dM + (self.K - 1) * self.dA 
             + 2 * self.dE + 2 * self.dR + self.dC
@@ -142,18 +142,21 @@ class BRLSVI():
                 comb_A_h, comb_A_h * comb_Edm1_h, 
                 comb_A_h * comb_Rdm1_h, comb_A_h * comb_C_h,
                 comb_A_h * comb_M_prev_h[:, :(k * self.dM)],
+                comb_A_h * comb_A_prev_h[:, :(k * self.dA)],
             ])
             comb_inter_h_A0 = np.zeros((ii, sum(self.dAC)))
             comb_inter_h_A0[:, sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
                 comb_A0, comb_A0 * comb_Edm1_h, 
                 comb_A0 * comb_Rdm1_h, comb_A0 * comb_C_h,
                 comb_A0 * comb_M_prev_h[:, :(k * self.dM)],
+                comb_A0 * comb_A_prev_h[:, :(k * self.dA)],
             ])
             comb_inter_h_A1 = np.zeros((ii, sum(self.dAC)))
             comb_inter_h_A1[:, sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
                 comb_A1, comb_A1 * comb_Edm1_h, 
                 comb_A1 * comb_Rdm1_h, comb_A1 * comb_C_h,
                 comb_A1 * comb_M_prev_h[:, :(k * self.dM)],
+                comb_A1 * comb_A_prev_h[:, :(k * self.dA)],
             ])
             ## concatenate main and interaction effect
             comb_X_h = np.hstack([comb_main_h, comb_inter_h])
@@ -233,11 +236,13 @@ class BRLSVI():
         inter_A0[sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
             A0, A0 * Edm1, A0 * Rdm1_imp, A0 * Cd[k],
             A0 * M_prev_h[:(k * self.dM)],
+            A0 * A_prev_h[:(k * self.dA)],
         ])
         inter_A1 = np.zeros(sum(self.dAC))
         inter_A1[sum(self.dAC[:k]):sum(self.dAC[:k + 1])] = np.hstack([
             A1, A1 * Edm1, A1 * Rdm1_imp, A1 * Cd[k],
             A1 * M_prev_h[:(k * self.dM)],
+            A1 * A_prev_h[:(k * self.dA)],
         ])
         ## concatenate main and interaction effect
         X_A0 = np.hstack([main, inter_A0]).reshape(1, -1)
